@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package transport;
+
+
+service RestaurantService {
+  rpc GetMenu (MenuRequest) returns (MenuResponse);
+  rpc PlaceOrder (OrderRequest) returns (OrderResponse);
+}
+
+message MenuRequest {
+  string category = 1;
+}
+
+message MenuResponse {
+  repeated MenuItem items = 1;
+}
+
+message MenuItem {
+  optional string name = 1;
+  double price = 2;
+}
+
+message OrderRequest {
+  string customer_name = 1;
+  repeated string items = 2;
+}
+
+message OrderResponse {
+  string order_id = 1;
+  string status = 2;
+}

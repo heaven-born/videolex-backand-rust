@@ -1,0 +1,32 @@
+[package]
+name = "videolex-backand-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lambda_http = "0.17.0"
+async-openai = "0.29.0"
+axum = "0.8.4"
+prost = "0.14.1"
+tonic = "0.14.1"
+tonic-prost = "0.14.1"
+tokio = "1.47.1"
+tonic-reflection = "0.14.1"
+
+[build-dependencies]
+tonic-prost-build = "0.14.1"
+
+tokio = { version = "1", features = ["macros"] }
+serde = { version = "1.0.217", features = ["derive"] }
+
+[[bin]]
+name = "lambda"
+path = "src/lambda.rs"
+
+[[bin]]
+name = "axum"
+path = "src/axum.rs"
+
+[[bin]]
+name = "grpc"
+path = "src/grpc.rs"
