@@ -8,7 +8,7 @@ fn main() -> Result<()> {
 
     configure()
         .build_server(true)
-        //.service_generator(Box::new(WebGenerator::new()))
+        //.service_generator((Box::new(WebGenerator::new()))
         .file_descriptor_set_path(out_dir.join("service_descriptor.bin"))
         .type_attribute(".transport", "#[derive(serde::Serialize, serde::Deserialize)]") // Add serde for MenuResponse
         .compile_protos(&["src/protos/model.proto"], &["src/protos/"])?;

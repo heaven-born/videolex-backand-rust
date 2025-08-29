@@ -2,12 +2,13 @@ use axum::Router;
 use axum::routing::{get};
 use lambda_http::{Error};
 mod http_handler;
+mod grpc_services;
 
 use serde_json;
 use tonic::{Request, Status};
 use crate::http_handler::transport::MenuRequest;
+use crate::grpc_services::RestaurantServiceImp;
 
-// Macro to generate json_to_menu_request function
 macro_rules! generate_json_to_request {
     // Match the trait and method signature, extracting the request type
     ($trait_name:ident, $method_name:ident, $request_type:path) => {
@@ -25,7 +26,8 @@ generate_json_to_request!(RestaurantService, get_menu, MenuRequest);
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-
+    let rs = RestaurantServiceImp::default();
+    
     let r = json_to_menu_request("test");
     println!("{:?}", r);
     // Extract some useful information from the request

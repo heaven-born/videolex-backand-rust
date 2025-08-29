@@ -1,26 +1,11 @@
-use lambda_http::{Error};
-use tonic::{Request, Response, Status};
 use tonic::transport::Server;
+mod grpc_services;
+use lambda_http::{Error};
 
 mod http_handler;
-use http_handler::transport::restaurant_service_server::RestaurantService;
-use crate::http_handler::transport::{MenuRequest, MenuResponse, OrderRequest, OrderResponse};
+use crate::grpc_services::RestaurantServiceImp;
 use crate::http_handler::transport::restaurant_service_server::RestaurantServiceServer;
 
-#[derive(Debug, Default)]
-pub struct RestaurantServiceImp {}
-
-
-#[tonic::async_trait]
-impl RestaurantService for RestaurantServiceImp {
-    async fn get_menu(&self, request: Request<MenuRequest>) -> Result<Response<MenuResponse>, Status> {
-        Ok(Response::new(MenuResponse { items: vec![] }))
-    }
-
-    async fn place_order(&self, request: Request<OrderRequest>) -> Result<Response<OrderResponse>, Status> {
-        todo!()
-    }
-}
 
 pub mod proto {
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
