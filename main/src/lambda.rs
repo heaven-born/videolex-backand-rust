@@ -16,10 +16,18 @@ async fn main() -> Result<(), Error> {
     let service = tower::ServiceBuilder::new().service(create_grpc_routes_axum());
 
     //let grpc_service = create_grpc_routes();
-    let service = tonic_web::GrpcWebLayer::new().layer(service);
+   // let service = tonic_web::GrpcWebLayer::new().layer(service);
 
-    let func = service_fn(move |event: http::Request<lambda_http::Body> | {
+    let func = service_fn(move |mut event: http::Request<lambda_http::Body> | {
         let mut service = service.clone();
+        /*
+        event.headers_mut().insert(
+            "content-type",
+            "application/grpc-web+proto".parse().unwrap()
+        );
+
+         */
+
         println!("{:?}", event);
 
         async move {
@@ -37,29 +45,29 @@ async fn main() -> Result<(), Error> {
             //let status = resp.unwrap().status();
             //println!("Error: {:?}", resp.err());
 
-            //let mut body_bytes = Vec::new();
+            let mut body_bytes = Vec::new();
             //GrpcWebCall::
             let  body =resp.into_body();
             println!("status : {:?}", status);
             //let hyper_body: UnsyncBoxBody<Binary, String> = body.into();
-            /*let mut stream = body.into_data_stream();
+            let mut stream = body.into_data_stream();
 
             while let Some(chunk) = stream.next().await {
                 let chunk: Result<Bytes, _> = chunk;
                 body_bytes.extend_from_slice(&chunk.unwrap());
-            }*/
+            }
 
 
             // Build Lambda-compatible response
             let lambda_resp = lambda_http::Response::builder()
                 .status(status)
                 .header("content-type", "application/grpc") // preserve gRPC content-type
-                .body(body).unwrap();
+                .body(Binary(body_bytes)).unwrap();
                 //.unwrap();
 
             println!("{:?}", lambda_resp);
             //lambda_resp
-            Ok::<lambda_http::Response<tonic::body::Body>, String>(lambda_resp)
+            Ok::<lambda_http::Response<Body>, String>(lambda_resp)
         }
     });
 
