@@ -1,6 +1,6 @@
 use ::axum::body::to_bytes;
 use ::axum::Router;
-use http::{HeaderMap, Request, Response};
+use http::{Request, Response};
 use lambda_http::{run, service_fn, Body, Error, RequestExt};
 use tower::ServiceExt;
 use lambda_http::Body as LambdaBody;
@@ -10,14 +10,12 @@ mod http_handler;
 
 mod axum;
 mod grpc_services;
-use crate::grpc_services::{handler, RestaurantServiceImp};
-use crate::http_handler::transport::MenuRequest;
+use crate::grpc_services::axum_router_wrapper;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //let handler = |event:  Request<Body>| -> handle_request(event, handler().clone());
     run(service_fn(|event:  Request<Body>| async {
-        handle_request(event, handler().clone()).await
+        handle_request(event, axum_router_wrapper().clone()).await
     })).await
 }
 
@@ -35,13 +33,11 @@ async fn convert_axum_to_lambda(axum_resp: AxumResponse) -> Response<LambdaBody>
     Response::from_parts(parts, lambda_body)
 }
 
-async fn handle_request(event: Request<Body>, mut router: Router) -> Result<Response<Body>, Error> {
-    let (ref _parts, body) = event
-        .into_parts();
+async fn handle_request(event: Request<Body>, router: Router) -> Result<Response<Body>, Error> {
+    let (ref _parts, body) = event.into_parts();
 
     let mut builder = Request::builder();
-    let headers = builder.headers_mut().unwrap();
-    headers.extend(_parts.headers.clone());
+    builder.headers_mut().unwrap().extend(_parts.headers.clone());
     let http_request: http::Request<LambdaBody> = builder
         .method(_parts.method.as_str())
         .uri(format!("{}?{:?}", _parts.uri, _parts.query_string_parameters()))

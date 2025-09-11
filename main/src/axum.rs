@@ -5,7 +5,7 @@ mod grpc_services;
 mod http_handler;
 
 use http::{StatusCode, Uri};
-use grpc_services::handler;
+use grpc_services::axum_router_wrapper;
 
 #[tokio::main]
 async fn main()  {
@@ -13,6 +13,6 @@ async fn main()  {
     async fn fallback(uri: Uri) -> (StatusCode, String) {
         (StatusCode::NOT_FOUND, format!("No route for {uri}"))
     }
-    axum::serve(listener, handler().fallback(fallback)).await.unwrap()
+    axum::serve(listener, axum_router_wrapper().fallback(fallback)).await.unwrap()
 }
 
