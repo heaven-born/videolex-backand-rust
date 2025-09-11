@@ -1,7 +1,5 @@
 
-#[path = "grpc_services.rs"] //TODO: ???
 mod grpc_services;
-#[path = "http_handler.rs"] //TODO: ???
 mod http_handler;
 
 use http::{StatusCode, Uri};

@@ -1,15 +1,15 @@
-use ::axum::body::to_bytes;
-use ::axum::Router;
+
+mod http_handler;
+mod grpc_services;
+
+use axum::body::to_bytes;
+use axum::Router;
 use http::{Request, Response};
 use lambda_http::{run, service_fn, Body, Error, RequestExt};
 use tower::ServiceExt;
 use lambda_http::Body as LambdaBody;
 use axum_core::response::Response as AxumResponse;
-
-mod http_handler;
-
-mod grpc_services;
-use crate::grpc_services::axum_router_wrapper;
+use grpc_services::axum_router_wrapper;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
