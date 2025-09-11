@@ -13,9 +13,8 @@ use grpc_services::axum_router_wrapper;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(|event:  Request<Body>| async {
-        handle_request(event, axum_router_wrapper().clone()).await
-    })).await
+    let handler = |event| handle_request(event, axum_router_wrapper().clone());
+    run(service_fn(handler)).await
 }
 
 async fn convert_axum_to_lambda(axum_resp: AxumResponse) -> Response<LambdaBody> {
