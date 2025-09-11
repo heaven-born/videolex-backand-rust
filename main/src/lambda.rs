@@ -1,78 +1,52 @@
-use bytes::Bytes;
-use futures_util::StreamExt;
-use http_body_util::BodyExt;
+use crate::http_handler::transport::restaurant_service_server::RestaurantService;
+use http::{Request, Response};
 use lambda_http::{run, service_fn, Body, Error};
-use lambda_http::Body::Binary;
-use tonic_web::GrpcWebCall;
+use tonic::{IntoRequest, Status};
 use tower::{Layer, Service, ServiceExt};
 
 mod http_handler;
 mod grpc_services;
-use crate::grpc_services::{create_grpc_routes, create_grpc_routes_axum};
+use crate::grpc_services::{create_grpc_routes_axum, RestaurantServiceImp};
+use crate::http_handler::transport::MenuRequest;
+use crate::http_handler::transport::restaurant_service_server::RestaurantServiceServer;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-
-    let service = tower::ServiceBuilder::new().service(create_grpc_routes_axum());
-
-    //let grpc_service = create_grpc_routes();
-   // let service = tonic_web::GrpcWebLayer::new().layer(service);
-
-    let func = service_fn(move |mut event: http::Request<lambda_http::Body> | {
-        let mut service = service.clone();
-        /*
-        event.headers_mut().insert(
-            "content-type",
-            "application/grpc-web+proto".parse().unwrap()
-        );
-
-         */
-
-        println!("{:?}", event);
-
-        async move {
-            let resp = service.oneshot(event).await;
-
-            let (status,resp) = match resp {
-                Ok(resp) => {
-                    println!("0-0{:?}", resp);
-                    (resp.status(),resp)
-                },
-                Err(e) => {
-                   panic!("Error was: {:?}", e);
-                }
-            };
-            //let status = resp.unwrap().status();
-            //println!("Error: {:?}", resp.err());
-
-            let mut body_bytes = Vec::new();
-            //GrpcWebCall::
-            let  body =resp.into_body();
-            println!("status : {:?}", status);
-            //let hyper_body: UnsyncBoxBody<Binary, String> = body.into();
-            let mut stream = body.into_data_stream();
-
-            while let Some(chunk) = stream.next().await {
-                let chunk: Result<Bytes, _> = chunk;
-                body_bytes.extend_from_slice(&chunk.unwrap());
-            }
-
-
-            // Build Lambda-compatible response
-            let lambda_resp = lambda_http::Response::builder()
-                .status(status)
-                .header("content-type", "application/grpc") // preserve gRPC content-type
-                .body(Binary(body_bytes)).unwrap();
-                //.unwrap();
-
-            println!("{:?}", lambda_resp);
-            //lambda_resp
-            Ok::<lambda_http::Response<Body>, String>(lambda_resp)
-        }
-    });
-
-    run(func).await
+    let service = service_fn(handler);
+    run(service).await
 }
+
+async fn handler(event: Request<Body>) -> Result<Response<Body>, Error> {
+    let service = RestaurantServiceImp::default();
+
+    match (event.method().as_str(), event.uri().path()) {
+        // Handle GET_MENU via JSON
+        ("POST", "/menu") => {
+            let body = event.body();
+            let menu_req: MenuRequest = serde_json::from_slice(body.as_ref())?;
+
+            let tonic_request: tonic::Request<MenuRequest> = menu_req.into_request();
+            let resp = service.get_menu(tonic_request)
+                .await
+                .map_err(|e: Status| Error::from(e.to_string()))?;
+
+            let menu = resp.into_inner();
+            let json_body = serde_json::to_string(&menu)?;
+
+            Ok(Response::builder()
+                .status(200)
+                .header("content-type", "application/json")
+                .body(Body::Text(json_body))
+                .unwrap())
+        }
+
+        _ => Ok(Response::builder()
+            .status(404)
+            .body(Body::Text("Not Found".to_string()))
+            .unwrap()),
+    }
+}
+
 
 //use bytes::Bytes;
 //use http_body_util::Full;
