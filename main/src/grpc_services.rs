@@ -3,7 +3,7 @@ use axum::routing::post;
 use http::StatusCode;
 use tonic::{IntoRequest, Request, Response, Status};
 
-use crate::http_handler::transport::{InternalErrorResponse, MenuItem, MenuRequest, MenuResponse, OrderRequest, OrderResponse};
+use crate::http_handler::transport::{InternalErrorResponse, MenuItem, MenuRequest, MenuResponse};
 use crate::http_handler::transport::restaurant_service_server::RestaurantService;
 
 
@@ -15,10 +15,6 @@ impl RestaurantService for RestaurantServiceImp {
     async fn get_menu(&self, request: Request<MenuRequest>) -> Result<Response<MenuResponse>, Status> {
         println!("!!!!!!!{:?}", request);
         Ok(Response::new(MenuResponse { items: vec![MenuItem{ name: Option::from("Pizza".to_string()), price: 10.0}] }))
-    }
-
-    async fn place_order(&self, request: Request<OrderRequest>) -> Result<Response<OrderResponse>, Status> {
-        todo!()
     }
 }
 

@@ -9,6 +9,5 @@ proc-macro = true
 [dependencies]
 syn = "2.0"
 quote = "1.0"
-axum = { version = "0.8.4", features = ["json"] }
 convert_case = "0.8.0"
 

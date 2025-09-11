@@ -8,7 +8,6 @@ use axum_core::response::Response as AxumResponse;
 
 mod http_handler;
 
-mod axum;
 mod grpc_services;
 use crate::grpc_services::axum_router_wrapper;
 
