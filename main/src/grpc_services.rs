@@ -1,7 +1,12 @@
-use tonic::{Request, Response, Status};
+use axum::{Json, Router};
+use axum::routing::post;
+use http::StatusCode;
+use tonic::{IntoRequest, Request, Response, Status};
 use tonic::service::Routes;
-use crate::http_handler::transport::{MenuItem, MenuRequest, MenuResponse, OrderRequest, OrderResponse};
+
+use crate::http_handler::transport::{InternalErrorResponse, MenuItem, MenuRequest, MenuResponse, OrderRequest, OrderResponse};
 use crate::http_handler::transport::restaurant_service_server::{RestaurantService, RestaurantServiceServer};
+
 
 #[derive(Debug, Default)]
 pub struct RestaurantServiceImp {}
@@ -19,13 +24,20 @@ impl RestaurantService for RestaurantServiceImp {
 }
 
 
-pub fn create_grpc_routes() -> Routes {
-    let mut router = tonic::service::Routes::default();
-    let imp = RestaurantServiceImp::default();
-    router.add_service(RestaurantServiceServer::new(imp))
-}
+pub fn handler() -> Router {
 
-pub fn create_grpc_routes_axum() -> axum::routing::Router
-{
-    create_grpc_routes().into_axum_router()
+    async fn get_menu( Json(payload): Json<MenuRequest>) -> Result<Json<MenuResponse>, (StatusCode, Json<InternalErrorResponse>)> {
+
+        let service = RestaurantServiceImp::default();
+
+        let tonic_request: tonic::Request<MenuRequest> = payload.into_request();
+        let error = InternalErrorResponse{error_message: "oops".parse().unwrap() };
+        service.get_menu(tonic_request)
+            .await
+            .map(|resp|Json(resp.into_inner()) )
+            .map_err(|e: Status| (StatusCode::INTERNAL_SERVER_ERROR, Json(error)))
+    }
+
+    Router::new()
+        .route("/menu", post(get_menu))
 }

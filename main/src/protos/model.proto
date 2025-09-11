@@ -30,3 +30,7 @@ message OrderResponse {
   string order_id = 1;
   string status = 2;
 }
+
+message InternalErrorResponse {
+  string error_message = 1;
+}

@@ -1,95 +1,57 @@
-use crate::http_handler::transport::restaurant_service_server::RestaurantService;
-use http::{Request, Response};
-use lambda_http::{run, service_fn, Body, Error};
-use tonic::{IntoRequest, Status};
-use tower::{Layer, Service, ServiceExt};
+use ::axum::body::to_bytes;
+use ::axum::Router;
+use http::{HeaderMap, Request, Response};
+use lambda_http::{run, service_fn, Body, Error, RequestExt};
+use tower::ServiceExt;
+use lambda_http::Body as LambdaBody;
+use axum_core::response::Response as AxumResponse;
 
 mod http_handler;
+
+mod axum;
 mod grpc_services;
-use crate::grpc_services::{create_grpc_routes_axum, RestaurantServiceImp};
+use crate::grpc_services::{handler, RestaurantServiceImp};
 use crate::http_handler::transport::MenuRequest;
-use crate::http_handler::transport::restaurant_service_server::RestaurantServiceServer;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let service = service_fn(handler);
-    run(service).await
+    //let handler = |event:  Request<Body>| -> handle_request(event, handler().clone());
+    run(service_fn(|event:  Request<Body>| async {
+        handle_request(event, handler().clone()).await
+    })).await
 }
 
-async fn handler(event: Request<Body>) -> Result<Response<Body>, Error> {
-    let service = RestaurantServiceImp::default();
+async fn convert_axum_to_lambda(axum_resp: AxumResponse) -> Response<LambdaBody> {
+    let (parts, body) = axum_resp.into_parts();
+    let bytes = to_bytes(body,usize::MAX).await.unwrap();
 
-    match (event.method().as_str(), event.uri().path()) {
-        // Handle GET_MENU via JSON
-        ("POST", "/menu") => {
-            let body = event.body();
-            let menu_req: MenuRequest = serde_json::from_slice(body.as_ref())?;
-
-            let tonic_request: tonic::Request<MenuRequest> = menu_req.into_request();
-            let resp = service.get_menu(tonic_request)
-                .await
-                .map_err(|e: Status| Error::from(e.to_string()))?;
-
-            let menu = resp.into_inner();
-            let json_body = serde_json::to_string(&menu)?;
-
-            Ok(Response::builder()
-                .status(200)
-                .header("content-type", "application/json")
-                .body(Body::Text(json_body))
-                .unwrap())
-        }
-
-        _ => Ok(Response::builder()
-            .status(404)
-            .body(Body::Text("Not Found".to_string()))
-            .unwrap()),
-    }
-}
-
-
-//use bytes::Bytes;
-//use http_body_util::Full;
-//use crate::grpc_services::create_grpc_routes_axum;
-/*
-fn api_gateway_to_hyper(req: ApiGatewayV2httpRequest) -> Request < Full<Bytes> >
-{
-    // 1. Build the URI
-    let path = req.raw_path.unwrap_or_else(|| "/".to_string());
-    let query = req.raw_query_string.unwrap_or_default();
-    let uri = if query.is_empty() {
-        path.parse().unwrap()
+    let lambda_body = if bytes.is_empty() {
+        LambdaBody::Empty
+    } else if let Ok(text) = String::from_utf8(bytes.to_vec()) {
+        LambdaBody::Text(text)
     } else {
-        format!("{}?{}", path, query).parse().unwrap()
+        LambdaBody::Binary(bytes.to_vec())
     };
-
-    // 2. Convert method
-    let method = req.http_method;
-
-    // 3. Convert body
-    let body_bytes = match req.body {
-        Some(s) => Bytes::from(s),
-        None => Bytes::new(),
-    };
-  //  let body = Incoming::from(Full::new(body_bytes)); // wrap bytes as a Hyper Incoming body
-    let body = Full::new(body_bytes); // Full<Bytes> implements http_body::Body
-
-
-    // 4. Build request
-    let mut builder = Request::builder()
-        .uri(uri)
-        .method(method);
-
-    // 5. Add headers
-    if let Some(headers) = req.headers {
-        for (k, v) in headers.iter() {
-            if let (Ok(name), Ok(value)) = (k.parse(), v.parse()) {
-                builder = builder.header(name, value);
-            }
-        }
-    }
-
-    builder.body(body).unwrap()
+    Response::from_parts(parts, lambda_body)
 }
 
- */
+async fn handle_request(event: Request<Body>, mut router: Router) -> Result<Response<Body>, Error> {
+    let (ref _parts, body) = event
+        .into_parts();
+
+    let mut builder = Request::builder();
+    let headers = builder.headers_mut().unwrap();
+    headers.extend(_parts.headers.clone());
+    let http_request: http::Request<LambdaBody> = builder
+        .method(_parts.method.as_str())
+        .uri(format!("{}?{:?}", _parts.uri, _parts.query_string_parameters()))
+        .body(body.into())?;
+
+    let response = router
+        .oneshot(http_request)
+        .await
+        .map_err(|e| anyhow::anyhow!("Router error: {}", e))?;
+
+
+    Ok(convert_axum_to_lambda(response).await)
+}

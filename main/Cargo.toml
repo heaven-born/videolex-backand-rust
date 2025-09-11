@@ -28,6 +28,7 @@ http-body-util = "0.1.2"
 hyper-util = "0.1.10"
 pin-project = "1.1.8"
 tonic-web = "0.14.1"
+anyhow = "1.0.99"
 
 [build-dependencies]
 tonic-prost-build = "0.14.1"

@@ -1,34 +1,22 @@
 mod grpc_services;
 
 use std::convert::Infallible;
-use std::io::ErrorKind;
-//use std::net::TcpListener;
-use tokio::net::TcpListener;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::task::{Context, Poll};
 use lambda_http::{Error};
-use tower::{BoxError, MakeService, ServiceBuilder, ServiceExt};
+use tower::{ServiceBuilder, ServiceExt};
 use axum::{routing::get, Router};
-use axum_core::response::IntoResponse;
 use futures::Stream;
 use http::Response;
 use http_body_util::combinators::{BoxBody, Frame};
-use http_body_util::{BodyExt, StreamBody};
-use hyper::{HeaderMap, Request, StatusCode};
+use hyper::Request;
 use hyper::body::Incoming;
-use hyper_util::rt::TokioExecutor;
-use lambda_http::lambda_runtime::IntoFunctionResponse;
-use pin_project::pin_project;
 use tonic::body::Body;
 use tonic::service::RoutesBuilder;
-use tonic::Status;
-use tower::make::Shared;
-use tonic::transport::{Server as TonicServer};
 
 
 mod http_handler;
-use crate::grpc_services::{create_grpc_routes, RestaurantServiceImp};
+use crate::grpc_services::RestaurantServiceImp;
 use crate::http_handler::transport::restaurant_service_server::RestaurantServiceServer;
 
 
@@ -227,13 +215,16 @@ async fn main() -> Result<(), Error> {
         //.route("/test", get(|| async { "Hello from Axum!" }));
     //*router.axum_router_mut() = axum_router;
 
+    /*
     let addr = "[::1]:50051".parse()?;
     TonicServer::builder()
-        .add_routes(create_grpc_routes())
+        ///.add_routes(create_grpc_routes())
         .add_service(RestaurantServiceServer::new(imp))
         .add_service(reflection_service)
         .serve(addr)
         .await?;
+        
+     */
 
 
 
