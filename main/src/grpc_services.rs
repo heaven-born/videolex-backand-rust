@@ -12,19 +12,6 @@ pub struct RestaurantServiceImp {}
 
 #[tonic::async_trait]
 impl RestaurantService for RestaurantServiceImp {
-    /*
-    #[utoipa::path(
-        get,
-        path = "/pets/{id}",
-        responses(
-            (status = 200, description = "Pet found successfully", body = Pet),
-            (status = NOT_FOUND, description = "Pet was not found")
-        ),
-        params(
-            ("id" = u64, Path, description = "Pet database id to get Pet for"),
-        )
-    )]
-     */
     async fn get_menu(&self, request: Request<MenuRequest>) -> Result<Response<MenuResponse>, Status> {
 
         println!("!!!!!!!{:?}", request);
@@ -33,21 +20,28 @@ impl RestaurantService for RestaurantServiceImp {
 }
 
 
-pub fn axum_router_wrapper() -> Router {
+mod service_api {
+    use http::StatusCode;
+    use tonic::{IntoRequest, Status};
+    use crate::grpc_services::RestaurantServiceImp;
+    use crate::http_handler::transport::{InternalErrorResponse, MenuRequest, MenuResponse};
+    use crate::http_handler::transport::restaurant_service_server::RestaurantService;
 
-    async fn get_menu(Json(payload): Json<MenuRequest>) -> Result<Json<MenuResponse>, (StatusCode, Json<String>)> {
 
-        let service = RestaurantServiceImp::default();
-
-        let tonic_request: tonic::Request<MenuRequest> = payload.into_request();
-        let error = InternalErrorResponse{error_message: "oops".parse().unwrap() };
-        service.get_menu(tonic_request)
-            .await
-            .map(|resp|Json(resp.into_inner()) )
-            .map_err(|e: Status| (StatusCode::INTERNAL_SERVER_ERROR, Json(format!("Error: {}. Status code: {}",error.error_message,e.code()))))
-    }
-
-    async fn get_menu_simple(payload: MenuRequest) -> Result<MenuResponse, (StatusCode, String)> {
+    #[utoipa::path(
+        post,
+        path = "/menu",
+        responses(
+            (status = 200, description = "Menu found successfully", body = MenuResponse),
+            (status = NOT_FOUND, description = "Pet was not found")
+        ),
+        request_body(
+             content_type = "application/json",
+             content = MenuRequest,
+             description = "A description "
+        )
+    )]
+    pub(crate) async fn get_menu(payload: MenuRequest) -> Result<MenuResponse, (StatusCode, String)> {
 
         let service = RestaurantServiceImp::default();
 
@@ -59,5 +53,21 @@ pub fn axum_router_wrapper() -> Router {
             .map_err(|e: Status| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}. Status code: {}",error.error_message,e.code())))
     }
 
-    Router::new().route("/menu", post(get_menu))
+}
+
+
+pub fn axum_router_wrapper() -> Router {
+
+    async fn get_menu_wrapper(Json(payload): Json<MenuRequest>) -> Result<Json<MenuResponse>, (StatusCode, Json<String>)> {
+        let request: MenuRequest = payload.into();
+        let res = service_api::get_menu(request).await;
+        res.map(|resp|Json(resp)).map_err(|e| (e.0, Json(e.1)))
+    }
+
+    //async fn json_wrapper<T,K,L>(f: impl Fn(T) -> Result<K, (StatusCode, L)>) -> Fn(Json<T>) -> Result<Json<K>, (StatusCode, Json<L>)> {
+
+    //}
+
+
+    Router::new().route("/menu", post(get_menu_wrapper))
 }
