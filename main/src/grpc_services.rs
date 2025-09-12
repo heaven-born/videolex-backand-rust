@@ -2,7 +2,7 @@ use axum::{Json, Router};
 use axum::routing::post;
 use http::StatusCode;
 use tonic::{IntoRequest, Request, Response, Status};
-
+use crate::grpc_services::service_api::{get_menu};
 use crate::http_handler::transport::{InternalErrorResponse, MenuItem, MenuRequest, MenuResponse};
 use crate::http_handler::transport::restaurant_service_server::RestaurantService;
 
@@ -21,8 +21,9 @@ impl RestaurantService for RestaurantServiceImp {
 
 
 mod service_api {
+    use axum::Json;
     use http::StatusCode;
-    use tonic::{IntoRequest, Status};
+    use tonic::{IntoRequest};
     use crate::grpc_services::RestaurantServiceImp;
     use crate::http_handler::transport::{InternalErrorResponse, MenuRequest, MenuResponse};
     use crate::http_handler::transport::restaurant_service_server::RestaurantService;
@@ -41,16 +42,15 @@ mod service_api {
              description = "A description "
         )
     )]
-    pub(crate) async fn get_menu(payload: MenuRequest) -> Result<MenuResponse, (StatusCode, String)> {
-
+    pub async fn get_menu(Json(payload): Json<MenuRequest>) -> Result<Json<MenuResponse>, (StatusCode, Json<String>)> {
         let service = RestaurantServiceImp::default();
 
-        let tonic_request: tonic::Request<MenuRequest> = payload.into_request();
+        let request: tonic::Request<MenuRequest>  = payload.into_request();
         let error = InternalErrorResponse{error_message: "oops".parse().unwrap() };
-        service.get_menu(tonic_request)
+        service.get_menu(request)
             .await
-            .map(|resp|resp.into_inner())
-            .map_err(|e: Status| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}. Status code: {}",error.error_message,e.code())))
+            .map(|resp|Json(resp.into_inner()))
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(format!("Error: {}. Status code: {}",error.error_message,e.code()))))
     }
 
 }
@@ -58,16 +58,7 @@ mod service_api {
 
 pub fn axum_router_wrapper() -> Router {
 
-    async fn get_menu_wrapper(Json(payload): Json<MenuRequest>) -> Result<Json<MenuResponse>, (StatusCode, Json<String>)> {
-        let request: MenuRequest = payload.into();
-        let res = service_api::get_menu(request).await;
-        res.map(|resp|Json(resp)).map_err(|e| (e.0, Json(e.1)))
-    }
-
-    //async fn json_wrapper<T,K,L>(f: impl Fn(T) -> Result<K, (StatusCode, L)>) -> Fn(Json<T>) -> Result<Json<K>, (StatusCode, Json<L>)> {
-
-    //}
 
 
-    Router::new().route("/menu", post(get_menu_wrapper))
+    Router::new().route("/menu", post(get_menu))
 }
