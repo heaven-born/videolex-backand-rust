@@ -3,10 +3,6 @@ syntax = "proto3";
 package transport;
 
 
-service RestaurantService {
-  rpc GetMenu (MenuRequest) returns (MenuResponse);
-}
-
 message MenuRequest {
   string category = 1;
 }

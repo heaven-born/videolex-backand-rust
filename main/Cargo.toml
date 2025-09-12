@@ -7,8 +7,7 @@ edition = "2021"
 lambda_http = "0.17.0"
 axum = "0.8.4"
 prost = "0.14.1"
-tonic = { version = "0.14.1", features = ["transport"] } # includes server
-tonic-prost = "0.14.1"
+prost-types = "0.14.1"
 tokio = "1.47.1"
 serde = "1.0.219"
 tower = "0.5.2"
@@ -16,10 +15,16 @@ http = "1.2.0"
 axum-core = "0.5.2"
 bytes = "1.9.0"
 anyhow = "1.0.99"
+
 utoipa = "5.4.0"
+utoipa-axum = "0.2.0"
+utoipauto = "0.3.0-alpha.2"
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+
+
 
 [build-dependencies]
-tonic-prost-build = "0.14.1"
+prost-build = "0.14.1"
 
 
 tokio = { version = "1", features = ["macros"] }
@@ -27,13 +32,8 @@ serde = { version = "1.0.217", features = ["derive"] }
 
 [[bin]]
 name = "lambda"
-path = "src/lambda.rs"
+path = "src/lambda_entry.rs"
 
 [[bin]]
 name = "axum"
-path = "src/axum.rs"
-
-[[bin]]
-name = "grpc"
-path = "src/grpc.rs"
-
+path = "src/axum_entry.rs"

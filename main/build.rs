@@ -1,18 +1,15 @@
-use std::env;
 use std::io::Result;
-use std::path::PathBuf;
-use tonic_prost_build::configure;
 
 fn main() -> Result<()> {
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-
-    configure()
-        .build_server(true)
-        //.service_generator((Box::new(WebGenerator::new()))
-        .file_descriptor_set_path(out_dir.join("service_descriptor.bin"))
-        .type_attribute(".transport", "#[derive(serde::Serialize, serde::Deserialize)]") // Add serde for MenuResponse
-        .type_attribute(".transport", "#[derive(utoipa::ToSchema)]") // Add serde for MenuResponse
+    //let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    //out_dir.join("service_descriptor.bin")
+    prost_build::Config::new()
+        //.out_dir("src/generated") // Optional: Output generated code to src/generated
+        .type_attribute(".transport", "#[derive(serde::Serialize, serde::Deserialize)]") // Add serde derives
+        .type_attribute(".transport", "#[derive(utoipa::ToSchema)]")
         .compile_protos(&["src/protos/model.proto"], &["src/protos/"])?;
+
+
     Ok(())
 }
 
