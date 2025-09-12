@@ -16,6 +16,7 @@ use crate::transport::transport::{MenuItem, MenuRequest, MenuResponse};
 )]
 pub async fn get_menu(Json(payload): Json<MenuRequest>) -> Result<Json<MenuResponse>, (StatusCode, Json<String>)> {
     let item = MenuItem{name: Option::from("testName".to_string()), price: 0.0 };
+    println!("{:?}", payload);
     Ok(Json(MenuResponse{items: vec![item]}))
 }
 

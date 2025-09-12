@@ -1,6 +1,7 @@
 
 mod transport;
 mod endpoints;
+mod axum_router;
 
 use ::axum::body::to_bytes;
 use ::axum::Router;
@@ -9,8 +10,7 @@ use lambda_http::{run, service_fn, Body, Error, RequestExt};
 use tower::ServiceExt;
 use lambda_http::Body as LambdaBody;
 use axum_core::response::Response as AxumResponse;
-mod axum_entry;
-use axum_entry::axum_router_wrapper;
+use crate::axum_router::axum_router_wrapper;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
