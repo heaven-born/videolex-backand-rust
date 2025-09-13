@@ -2,6 +2,8 @@
 mod transport;
 mod endpoints;
 mod axum_router;
+mod ai;
+mod domain;
 
 use ::axum::body::to_bytes;
 use ::axum::Router;

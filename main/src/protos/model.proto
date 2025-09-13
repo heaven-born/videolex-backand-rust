@@ -3,17 +3,17 @@ syntax = "proto3";
 package transport;
 
 
-message MenuRequest {
-  string category = 1;
+message ExplainWordRequest {
+  string context = 1;
+  string word = 2;
+  string native_language = 3;
 }
 
-message MenuResponse {
-  repeated MenuItem items = 1;
-}
-
-message MenuItem {
-  optional string name = 1;
-  double price = 2;
+message ExplainWordResponse{
+  string word_or_phrase = 1;
+  string part_of_speech = 2;
+  string attached_word_meaning = 3;
+  string attached_word_meaning_native = 4;
 }
 
 message InternalErrorResponse {

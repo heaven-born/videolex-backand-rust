@@ -2,6 +2,8 @@
 mod endpoints;
 mod transport;
 mod axum_router;
+mod ai;
+mod domain;
 
 use http::{StatusCode, Uri};
 use crate::axum_router::axum_router_wrapper;
