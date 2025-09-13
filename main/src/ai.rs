@@ -87,8 +87,9 @@ impl Ai for OpenIA{
         let content =
             self.client.chat().create(request).await
             .map_err(|_e| Error::AiError(_e.to_string()))?
-            .choices.first().ok_or(Error::AiError("No choices in result".to_string()))?.clone()
-            .message.content.ok_or(Error::AiError("No content in result".to_string()))?;
+            .choices.first().map( |c| c.message.content.clone()).flatten()
+            .ok_or(Error::AiError("No content in result".to_string()))?;
+
         serde_json::from_str(content.as_str()).map_err(|e| {
             eprintln!("Error deserializing response: {}", e);
             Error::GeneralError(e.to_string())
