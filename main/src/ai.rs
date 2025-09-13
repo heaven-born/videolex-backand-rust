@@ -15,6 +15,7 @@ use crate::domain::{Error, ExplainWordOutput};
 pub(crate) trait Ai {
     fn new(client: Client<OpenAIConfig>) -> Self;
     async fn explain_word(&self, word: &str, context: &str, native_language: &str, available_part_of_speeches: HashSet<&str> ) -> Result<ExplainWordOutput,Error>;
+    async fn tts(&self, test: String, instructions: String ) -> Result<String,Error>;
 
 
 }
@@ -91,6 +92,10 @@ impl Ai for OpenIA{
             eprintln!("Error deserializing response: {}", e);
             Error::GeneralError(e.to_string())
         })
+    }
+
+    async fn tts(&self, test: String, instructions: String) -> Result<String, Error> {
+        todo!()
     }
 }
 

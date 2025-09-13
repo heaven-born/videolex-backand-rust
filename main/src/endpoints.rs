@@ -4,7 +4,7 @@ use axum::Json;
 use http::StatusCode;
 use crate::ai::OpenIA;
 use crate::ai::Ai;
-use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse};
+use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRequest, TtsResponse};
 #[utoipa::path(
     post,
     path = "/explain_word",
@@ -29,6 +29,31 @@ pub async fn get_menu(Json(payload): Json<ExplainWordRequest>) -> Result<Json<Ex
     ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
 
     Ok(Json(explained_word.into()))
+}
+
+
+
+#[utoipa::path(
+    post,
+    path = "/text-to-speech",
+    responses(
+        (status = 200, description = "TTS", body = TtsResponse),
+        (status = INTERNAL_SERVER_ERROR)
+    ),
+    request_body(
+         content_type = "application/json",
+         content = TtsRequest,
+    )
+)]
+pub async fn tts(Json(payload): Json<TtsRequest>) -> Result<Json<TtsResponse>, (StatusCode, Json<String>)> {
+    let open_ai  = OpenIA::new(Client::new());
+
+    let resp = open_ai.tts(
+        payload.text,
+        payload.instruction
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+
+    Ok(Json(TtsResponse{base64_data:resp}))
 }
 
 

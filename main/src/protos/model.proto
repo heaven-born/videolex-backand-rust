@@ -3,6 +3,15 @@ syntax = "proto3";
 package transport;
 
 
+message TTSRequest {
+  string text = 1;
+  string instruction = 2;
+}
+
+message TTSResponse {
+  string base64Data = 1;
+}
+
 message ExplainWordRequest {
   string context = 1;
   string word = 2;
