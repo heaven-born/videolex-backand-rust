@@ -15,7 +15,7 @@ use crate::domain::{Error, ExplainWordOutput};
 pub(crate) trait Ai {
     fn new(client: Client<OpenAIConfig>) -> Self;
     async fn explain_word(&self, word: &str, context: &str, native_language: &str, available_part_of_speeches: HashSet<&str> ) -> Result<ExplainWordOutput,Error>;
-    async fn tts(&self, test: String, instructions: String ) -> Result<String,Error>;
+    async fn tts(&self, test: &str, instructions: &str ) -> Result<String,Error>;
 
 
 }
@@ -84,17 +84,18 @@ impl Ai for OpenIA{
             ])
             .build().unwrap();
 
-        let resp = self.client.chat().create(request).await
-            .map_err(|_e| Error::AiError(_e.to_string()))?;
-        let choose = resp.choices.first().unwrap().clone();
-        let content = choose.message.content.unwrap();
+        let content =
+            self.client.chat().create(request).await
+            .map_err(|_e| Error::AiError(_e.to_string()))?
+            .choices.first().ok_or(Error::AiError("No choices in result".to_string()))?.clone()
+            .message.content.ok_or(Error::AiError("No content in result".to_string()))?;
         serde_json::from_str(content.as_str()).map_err(|e| {
             eprintln!("Error deserializing response: {}", e);
             Error::GeneralError(e.to_string())
         })
     }
 
-    async fn tts(&self, test: String, instructions: String) -> Result<String, Error> {
+    async fn tts(&self, test: &str, instructions: &str) -> Result<String, Error> {
         todo!()
     }
 }

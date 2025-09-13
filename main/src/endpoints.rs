@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::sync::Arc;
-use async_openai::Client;
 use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
@@ -22,10 +21,10 @@ use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRe
 pub async fn get_menu(State(open_ai): State<Arc<OpenIA>>, Json(payload): Json<ExplainWordRequest>) -> Result<Json<ExplainWordResponse>, (StatusCode, Json<String>)> {
     let parts_of_speeches = HashSet::from(["adjective","noun","verb","phrasal verb","adverb", "pronoun", "preposition", "conjunction", "interjection", "other"]);
     let explained_word = open_ai.explain_word(
-        &*payload.word,
-        &*payload.context ,
-        &*payload.native_language ,
-        parts_of_speeches ,
+        payload.word.as_str(),
+        &*payload.context.as_str(),
+        &*payload.native_language.as_str() ,
+        parts_of_speeches,
     ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
 
     Ok(Json(explained_word.into()))
@@ -46,8 +45,10 @@ pub async fn get_menu(State(open_ai): State<Arc<OpenIA>>, Json(payload): Json<Ex
     )
 )]
 pub async fn tts(State(open_ai): State<Arc<OpenIA>>, Json(payload): Json<TtsRequest>) -> Result<Json<TtsResponse>, (StatusCode, Json<String>)> {
-    let resp = open_ai.tts( payload.text, payload.instruction ).await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+    let resp = open_ai.tts(
+        payload.text.as_str(),
+        payload.instruction.as_str()
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
 
     Ok(Json(TtsResponse{base64_data:resp}))
 }
