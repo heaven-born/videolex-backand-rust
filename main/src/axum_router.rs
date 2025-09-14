@@ -12,7 +12,7 @@ pub fn axum_router_wrapper() -> Router {
     let open_ai = Arc::new(OpenAI {client:Client::new()});
 
     let (router,  api_doc) = OpenApiRouter::<Arc<OpenAI>>::new()
-        .routes(routes!(endpoints::get_menu))
+        .routes(routes!(endpoints::explain_word))
         .routes(routes!(endpoints::tts))
         .split_for_parts();
 

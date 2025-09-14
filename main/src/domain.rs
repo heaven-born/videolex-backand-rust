@@ -1,6 +1,6 @@
 use crate::transport::transport::ExplainWordResponse;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub(crate) struct ExplainWordOutput {
     word_or_phrase: String,
     part_of_speech: String,

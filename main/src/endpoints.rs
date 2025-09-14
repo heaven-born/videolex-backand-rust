@@ -7,7 +7,7 @@ use crate::ai::Ai;
 use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRequest, TtsResponse};
 #[utoipa::path(
     post,
-    path = "/explain_word",
+    path = "/explain-word",
     responses(
         (status = 200, description = "Explains word", body = ExplainWordResponse),
         (status = INTERNAL_SERVER_ERROR)
@@ -17,7 +17,7 @@ use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRe
          content = ExplainWordRequest,
     )
 )]
-pub async fn get_menu(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<ExplainWordRequest>) -> Result<Json<ExplainWordResponse>, (StatusCode, Json<String>)> {
+pub async fn explain_word(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<ExplainWordRequest>) -> Result<Json<ExplainWordResponse>, (StatusCode, Json<String>)> {
     let parts_of_speeches = HashSet::from(["adjective","noun","verb","phrasal verb","adverb", "pronoun", "preposition", "conjunction", "interjection", "other"]);
     let explained_word = open_ai.explain_word(
         payload.word.as_str(),
