@@ -12,11 +12,13 @@ use lambda_http::{run, service_fn, Body, Error, RequestExt};
 use tower::ServiceExt;
 use lambda_http::Body as LambdaBody;
 use axum_core::response::Response as AxumResponse;
+use lambda_http::request::RequestContext::{ApiGatewayV1, ApiGatewayV2};
 use crate::axum_router::axum_router_wrapper;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let handler = |event| handle_request(event, axum_router_wrapper().clone());
+    println!("Starting lambda");
     run(service_fn(handler)).await
 }
 
@@ -35,13 +37,28 @@ async fn convert_axum_to_lambda(axum_resp: AxumResponse) -> Response<LambdaBody>
 }
 
 async fn handle_request(event: Request<Body>, router: Router) -> Result<Response<Body>, Error> {
-    let (ref _parts, body) = event.into_parts();
+    let (_parts, body) = event.into_parts();
+
 
     let mut builder = Request::builder();
     builder.headers_mut().unwrap().extend(_parts.headers.clone());
+
+    let stage = match _parts.request_context() {
+        ApiGatewayV2(ref ctx) => ctx.stage.clone().unwrap_or_default(),
+        ApiGatewayV1(ref ctx) => ctx.stage.clone().unwrap_or_default(),
+        _ => "".to_string()
+    };
+
+    let stage_prefix = if stage.is_empty() { "" } else { "/" };
+
+    let path_no_stage = _parts.uri.path()
+        .strip_prefix(&format!("{stage_prefix}{stage}"))
+        .unwrap_or(_parts.uri.path());
+
+
     let http_request: http::Request<LambdaBody> = builder
         .method(_parts.method.as_str())
-        .uri(format!("{}?{:?}", _parts.uri, _parts.query_string_parameters()))
+        .uri(path_no_stage)
         .body(body.into())?;
 
     let response = router

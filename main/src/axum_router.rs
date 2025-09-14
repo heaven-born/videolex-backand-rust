@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use async_openai::Client;
 use axum::Router;
+use http::{StatusCode, Uri};
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use utoipa_swagger_ui::SwaggerUi;
@@ -16,9 +17,15 @@ pub fn axum_router_wrapper() -> Router {
         .routes(routes!(endpoints::tts))
         .split_for_parts();
 
+    async fn fallback(uri: Uri) -> (StatusCode, String) {
+        (StatusCode::NOT_FOUND, format!("No route for {uri}"))
+    }
+
     Router::new()
         .merge(router)
         .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", api_doc))
         .with_state(open_ai)
+        .fallback(fallback)
+
 
 }
