@@ -13,19 +13,15 @@ use crate::domain::{Error, ExplainWordOutput};
 
 
 pub(crate) trait Ai {
-    fn new(client: Client<OpenAIConfig>) -> Self;
     async fn explain_word(&self, word: &str, context: &str, native_language: &str, available_part_of_speeches: HashSet<&str> ) -> Result<ExplainWordOutput,Error>;
     async fn tts(&self, test: &str, instructions: &str ) -> Result<String,Error>;
 
 
 }
 
-pub struct OpenIA {
+pub struct OpenAI {
     pub(crate) client: Client<OpenAIConfig>}
-impl Ai for OpenIA{
-    fn new(client: Client<OpenAIConfig>) -> OpenIA {
-        OpenIA { client }
-    }
+impl Ai for OpenAI {
     async fn explain_word(
         &self,
         word: &str,
