@@ -4,17 +4,19 @@ use async_openai::config::OpenAIConfig;
 use async_openai::{
     types::{ CreateChatCompletionRequestArgs},
 };
-use async_openai::types::{ChatCompletionRequestUserMessage,ResponseFormatJsonSchema};
+use async_openai::types::{ChatCompletionRequestUserMessage, CreateSpeechRequestArgs, ResponseFormatJsonSchema, SpeechModel, Voice};
 use async_openai::types::ResponseFormat;
 use async_openai::types::ChatCompletionRequestMessage::User;
 use async_openai::types::ChatCompletionRequestUserMessageContent::Text;
 use utoipa::gen::serde_json::json;
 use crate::domain::{Error, ExplainWordOutput};
+use base64::{engine::general_purpose, Engine as _};
+
 
 
 pub(crate) trait Ai {
     async fn explain_word(&self, word: &str, context: &str, native_language: &str, available_part_of_speeches: HashSet<&str> ) -> Result<ExplainWordOutput,Error>;
-    async fn tts(&self, test: &str, instructions: &str ) -> Result<String,Error>;
+    async fn tts(&self, text: &str, instructions: &str ) -> Result<String,Error>;
 
 
 }
@@ -92,8 +94,21 @@ impl Ai for OpenAI {
         })
     }
 
-    async fn tts(&self, test: &str, instructions: &str) -> Result<String, Error> {
-        todo!()
+    async fn tts(&self, text: &str, instructions: &str) -> Result<String, Error> {
+
+        let request = CreateSpeechRequestArgs::default()
+            .model(SpeechModel::Tts1)
+            .voice(Voice::Alloy)
+            .input(text.to_string())
+            .instructions(instructions.to_string()).build().unwrap();
+
+        let content =
+            self.client.audio().speech(request).await
+            .map_err(|_e| Error::AiError(_e.to_string()))?
+            .bytes;
+
+         Ok(general_purpose::STANDARD.encode(content))
+
     }
 }
 

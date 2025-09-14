@@ -4,7 +4,7 @@ use axum::Router;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use utoipa_swagger_ui::SwaggerUi;
-use crate::ai::{Ai, OpenAI};
+use crate::ai::OpenAI;
 use crate::endpoints;
 
 pub fn axum_router_wrapper() -> Router {
@@ -13,6 +13,7 @@ pub fn axum_router_wrapper() -> Router {
 
     let (router,  api_doc) = OpenApiRouter::<Arc<OpenAI>>::new()
         .routes(routes!(endpoints::get_menu))
+        .routes(routes!(endpoints::tts))
         .split_for_parts();
 
     Router::new()

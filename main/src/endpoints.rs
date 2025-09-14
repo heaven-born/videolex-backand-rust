@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
-use crate::ai::OpenAI;
 use crate::ai::Ai;
 use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRequest, TtsResponse};
 #[utoipa::path(

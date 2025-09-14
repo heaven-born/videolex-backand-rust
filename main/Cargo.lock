@@ -2301,6 +2301,7 @@ dependencies = [
  "async-openai",
  "axum",
  "axum-core",
+ "base64",
  "bytes",
  "http",
  "lambda_http",
