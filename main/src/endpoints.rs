@@ -4,7 +4,7 @@ use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use crate::ai::Ai;
-use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRequest, TtsResponse};
+use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRequest, TtsResponse, WordCardRequest, WordCardResponse};
 #[utoipa::path(
     post,
     path = "/explain-word",
@@ -51,6 +51,52 @@ pub async fn tts(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<TtsReq
 
     Ok(Json(TtsResponse{base64_data:resp}))
 }
+
+
+#[utoipa::path(
+    post,
+    path = "/word-card",
+    responses(
+        (status = 200, description = "Explains word", body = WordCardResponse),
+        (status = INTERNAL_SERVER_ERROR)
+    ),
+    request_body(
+         content_type = "application/json",
+         content = WordCardRequest,
+    )
+)]
+pub async fn word_card(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<WordCardRequest>) -> Result<Json<WordCardResponse>, (StatusCode, Json<String>)> {
+    let pos = payload.part_of_speech.as_str();
+    let word = payload.word;
+
+    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary.");
+
+    let meaning = open_ai.ask(
+        prompt.as_str()
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+
+    let make_this_way= "imbued with emotions on people's faces if possible";
+    let example_image_gen_prompt = format!("Extract one example from the given bellow definition that better fits for visualizing ${pos} English word '${word}'. Give me extended 100 words description of a picture or photo of the extracted example. Make it ${make_this_way}. Do not provide the extracted example. Just give me the picture description. Definition: {meaning}");
+
+    let example_image_prompt = open_ai.ask(
+        example_image_gen_prompt.as_str()
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+
+
+    let image_base64 = open_ai.gen_image(
+        example_image_prompt.as_str()
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+
+    let voice = open_ai.tts(
+        meaning.as_str(), ""
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+
+    let resp = WordCardResponse{ img_base64: image_base64, voice_base64: voice, explanation: meaning };
+    Ok(Json(resp.into()))
+}
+
+
+
 
 
 

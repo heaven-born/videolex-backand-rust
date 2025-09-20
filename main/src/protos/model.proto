@@ -25,6 +25,17 @@ message ExplainWordResponse{
   string attached_word_meaning_native = 4;
 }
 
+message WordCardRequest {
+  string word = 1;
+  string part_of_speech = 2;
+}
+
+message WordCardResponse {
+  string img_base64 = 1;
+  string voice_base64 = 2;
+  string explanation = 3;
+}
+
 message InternalErrorResponse {
   string error_message = 1;
 }

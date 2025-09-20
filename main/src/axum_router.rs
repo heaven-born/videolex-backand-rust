@@ -15,6 +15,7 @@ pub fn axum_router_wrapper() -> Router {
     let (router,  api_doc) = OpenApiRouter::<Arc<OpenAI>>::new()
         .routes(routes!(endpoints::explain_word))
         .routes(routes!(endpoints::tts))
+        .routes(routes!(endpoints::word_card))
         .split_for_parts();
 
     async fn fallback(uri: Uri) -> (StatusCode, String) {
