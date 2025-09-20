@@ -82,7 +82,6 @@ pub async fn word_card(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<
         example_image_gen_prompt.as_str()
     ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
 
-
     let image_base64 = open_ai.gen_image(
         example_image_prompt.as_str()
     ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
