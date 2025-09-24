@@ -120,7 +120,7 @@ impl Ai for OpenAI {
             .n(1)
             .model(ImageModel::Other("gpt-image-1".to_string()))
             //.response_format(ImageResponseFormat::Url)
-            .quality(ImageQuality::Low)
+            .quality(ImageQuality::Medium)
             .size(ImageSize::S1024x1024)
             .user("async-openai")
             .build().unwrap();
