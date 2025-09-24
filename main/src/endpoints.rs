@@ -69,14 +69,14 @@ pub async fn word_card(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<
     let pos = payload.part_of_speech.as_str();
     let word = payload.word;
 
-    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary.");
+    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary. Don't use markdown.");
 
     let meaning = open_ai.ask(
         prompt.as_str()
     ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
 
-    let make_this_way= "imbued with emotions on people's faces if possible";
-    let example_image_gen_prompt = format!("Extract one example from the given bellow definition that better fits for visualizing ${pos} English word '${word}'. Give me extended 100 words description of a picture or photo of the extracted example. Make it ${make_this_way}. Do not provide the extracted example. Just give me the picture description. Definition: {meaning}");
+    //let make_this_way= "imbued with emotions on people's faces if possible";
+    let example_image_gen_prompt = format!("Extract one example from the given bellow definition that better fits for visualizing ${pos} English word '${word}'. Give me extended 100 words description of a picture or photo of the extracted example. Do not provide the extracted example. Just give me the picture description. Definition: {meaning}");
 
     let example_image_prompt = open_ai.ask(
         example_image_gen_prompt.as_str()
