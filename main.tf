@@ -180,6 +180,7 @@ resource "aws_api_gateway_integration" "word_card_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.videolex_backend.invoke_arn
+  timeout_milliseconds    = 60000
 }
 
 
