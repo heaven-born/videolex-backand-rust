@@ -69,7 +69,7 @@ pub async fn word_card(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<
     let pos = payload.part_of_speech.as_str();
     let word = payload.word;
 
-    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary. Don't use plain formatting instead of markdown.");
+    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary. Use plain formatting (not markdown).");
 
     let meaning = open_ai.ask(
         prompt.as_str()
