@@ -39,3 +39,12 @@ message WordCardResponse {
 message InternalErrorResponse {
   string error_message = 1;
 }
+
+message GuessCefrlLevelRequest {
+  string word = 1;
+  string part_of_speech = 2;
+}
+
+message GuessCefrlLevelResponse {
+  string level = 1;
+}

@@ -184,6 +184,27 @@ resource "aws_api_gateway_integration" "word_card_integration" {
 }
 
 
+resource "aws_api_gateway_resource" "word_level_resource" {
+  rest_api_id = aws_api_gateway_rest_api.videolex_backend_api.id
+  parent_id   = aws_api_gateway_rest_api.videolex_backend_api.root_resource_id
+  path_part   = "guess-cefr-word-level"
+}
+
+resource "aws_api_gateway_method" "word_level_method" {
+  rest_api_id   = aws_api_gateway_rest_api.videolex_backend_api.id
+  resource_id   = aws_api_gateway_resource.word_level_resource.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "word_level_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.videolex_backend_api.id
+  resource_id             = aws_api_gateway_resource.word_level_resource.id
+  http_method             = aws_api_gateway_method.word_level_method.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.videolex_backend.invoke_arn
+}
 
 
 # API Gateway Deployment
@@ -195,6 +216,7 @@ resource "aws_api_gateway_deployment" "videolex_backend_deployment" {
     aws_api_gateway_integration.tts_integration,
     aws_api_gateway_integration.swagger_integration,
     aws_api_gateway_integration.word_card_integration,
+    aws_api_gateway_integration.word_level_integration,
   ]
 }
 

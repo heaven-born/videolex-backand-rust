@@ -9,7 +9,7 @@ use async_openai::types::ResponseFormat;
 use async_openai::types::ChatCompletionRequestMessage::User;
 use async_openai::types::ChatCompletionRequestUserMessageContent::Text;
 use utoipa::gen::serde_json::json;
-use crate::domain::{Error, ExplainWordOutput};
+use crate::domain::{Error, ExplainWordOutput, GuessCefrWordLevelOutput};
 use base64::{engine::general_purpose, Engine as _};
 
 
@@ -18,10 +18,9 @@ pub(crate) trait Ai {
     async fn explain_word(&self, word: &str, context: &str, native_language: &str, available_part_of_speeches: HashSet<&str> ) -> Result<ExplainWordOutput,Error>;
     async fn tts(&self, text: &str, instructions: &str ) -> Result<String,Error>;
     async fn gen_image(&self, prompt: &str) -> Result<String, Error>;
-    async fn ask(
-        &self,
-        prompt: &str,
-    ) -> Result<String,Error>;
+    async fn ask( &self, prompt: &str) -> Result<String,Error>;
+
+    async fn cefr_word_level( &self, word: &str, pos: &str, ) -> Result<GuessCefrWordLevelOutput,Error>; 
 }
 
 pub struct OpenAI {
@@ -171,6 +170,58 @@ impl Ai for OpenAI {
                 .map_err(|_e| Error::AiError(_e.to_string()))?
                 .choices.first().map( |c| c.message.content.clone()).flatten()
                 .ok_or(Error::AiError("No content in result".to_string()))
+
+    }
+
+    async fn cefr_word_level(&self, word: &str, pos: &str) -> Result<GuessCefrWordLevelOutput, Error> {
+        let json_schema = ResponseFormatJsonSchema{
+            description: None,
+            name: "explain_word".to_string(),
+            strict: Some(true),
+            schema: Some(json!(
+                {
+                    "type": "object",
+                    "properties": {
+                        "level": {
+                            "enum": ["A1", "A2", "B1", "B2", "C1", "C2"],
+                            "description": "CEFR level"
+                        },
+                    },
+                    "additionalProperties": false,
+                    "required": ["level"],
+
+                }
+            )),
+        };
+        let response_format = ResponseFormat::JsonSchema {json_schema};
+
+        let request = CreateChatCompletionRequestArgs::default()
+            .response_format(response_format)
+            .model("gpt-4.1")
+            .messages(vec![
+                User(
+                    ChatCompletionRequestUserMessage{
+                        content: Text(
+                            format!("Guess CERF english level for word '{word}'(part of speech: {pos})")
+                        ),
+                        name: None,
+                    }
+                )
+
+            ])
+            .build().unwrap();
+
+        let content =
+            self.client.chat().create(request).await
+                .map_err(|_e| Error::AiError(_e.to_string()))?
+                .choices.first().map( |c| c.message.content.clone()).flatten()
+                .ok_or(Error::AiError("No content in result".to_string()))?;
+
+
+        serde_json::from_str(content.as_str()).map_err(|e| {
+            eprintln!("Error deserializing response: {}", e);
+            Error::GeneralError(e.to_string())
+        })
 
     }
 }

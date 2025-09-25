@@ -4,7 +4,7 @@ use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use crate::ai::Ai;
-use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, TtsRequest, TtsResponse, WordCardRequest, WordCardResponse};
+use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, GuessCefrlLevelRequest, GuessCefrlLevelResponse, TtsRequest, TtsResponse, WordCardRequest, WordCardResponse};
 #[utoipa::path(
     post,
     path = "/explain-word",
@@ -69,7 +69,7 @@ pub async fn word_card(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<
     let pos = payload.part_of_speech.as_str();
     let word = payload.word;
 
-    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary. Don't use markdown.");
+    let prompt = format!("Explain meaning of English word '{word}({pos})' in 60 words. Provide examples. Use simple English and very simple vocabulary. Don't use plain formatting instead of markdown.");
 
     let meaning = open_ai.ask(
         prompt.as_str()
@@ -94,6 +94,26 @@ pub async fn word_card(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<
     Ok(Json(resp.into()))
 }
 
+
+#[utoipa::path(
+    post,
+    path = "/guess-cefr-word-level",
+    request_body(
+         content_type = "application/json",
+         content = GuessCefrlLevelRequest,
+    ),
+    responses(
+        (status = 200, description = "Guess level", body = GuessCefrlLevelResponse),
+        (status = INTERNAL_SERVER_ERROR)
+    ),
+)]
+pub async fn guess_cefr_word_level(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<GuessCefrlLevelRequest>) -> Result<Json<GuessCefrlLevelResponse>, (StatusCode, Json<String>)> {
+    let resp = open_ai.cefr_word_level(
+        payload.word.as_str(), payload.part_of_speech.as_str()
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+    let resp = GuessCefrlLevelResponse{ level: resp.level};
+    Ok(Json(resp.into()))
+}
 
 
 
