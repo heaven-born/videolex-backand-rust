@@ -4,7 +4,7 @@ use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use crate::ai::Ai;
-use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, GuessCefrlLevelRequest, GuessCefrlLevelResponse, TtsRequest, TtsResponse, WordCardRequest, WordCardResponse};
+use crate::transport::transport::{ExplainWordRequest, ExplainWordResponse, GuessCefrlLevelRequest, GuessCefrlLevelResponse, SynonymsRequest, SynonymsResponse, TtsRequest, TtsResponse, WordCardRequest, WordCardResponse};
 #[utoipa::path(
     post,
     path = "/explain-word",
@@ -112,6 +112,27 @@ pub async fn guess_cefr_word_level(State(open_ai): State<Arc<impl Ai>>, Json(pay
         payload.word.as_str(), payload.part_of_speech.as_str()
     ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
     let resp = GuessCefrlLevelResponse{ level: resp.level};
+    Ok(Json(resp.into()))
+}
+
+
+#[utoipa::path(
+    post,
+    path = "/synonyms",
+    request_body(
+         content_type = "application/json",
+         content = SynonymsRequest,
+    ),
+    responses(
+        (status = 200, description = "Get word synonims", body = SynonymsResponse),
+        (status = INTERNAL_SERVER_ERROR)
+    ),
+)]
+pub async fn synonyms(State(open_ai): State<Arc<impl Ai>>, Json(payload): Json<SynonymsRequest>) -> Result<Json<SynonymsResponse>, (StatusCode, Json<String>)> {
+    let resp = open_ai.synonyms(
+        payload.word.as_str(), payload.part_of_speech.as_str()
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())))?;
+    let resp = SynonymsResponse{ synonyms: resp.synonyms, };
     Ok(Json(resp.into()))
 }
 

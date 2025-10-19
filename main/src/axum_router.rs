@@ -17,6 +17,7 @@ pub fn axum_router_wrapper() -> Router {
         .routes(routes!(endpoints::tts))
         .routes(routes!(endpoints::word_card))
         .routes(routes!(endpoints::guess_cefr_word_level))
+        .routes(routes!(endpoints::synonyms))
         .split_for_parts();
 
     async fn fallback(uri: Uri) -> (StatusCode, String) {

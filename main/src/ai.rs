@@ -9,7 +9,7 @@ use async_openai::types::ResponseFormat;
 use async_openai::types::ChatCompletionRequestMessage::User;
 use async_openai::types::ChatCompletionRequestUserMessageContent::Text;
 use utoipa::gen::serde_json::json;
-use crate::domain::{Error, ExplainWordOutput, GuessCefrWordLevelOutput};
+use crate::domain::{Error, ExplainWordOutput, GuessCefrWordLevelOutput, SynonymsOutput};
 use base64::{engine::general_purpose, Engine as _};
 
 
@@ -20,7 +20,8 @@ pub(crate) trait Ai {
     async fn gen_image(&self, prompt: &str) -> Result<String, Error>;
     async fn ask( &self, prompt: &str) -> Result<String,Error>;
 
-    async fn cefr_word_level( &self, word: &str, pos: &str, ) -> Result<GuessCefrWordLevelOutput,Error>; 
+    async fn cefr_word_level( &self, word: &str, pos: &str, ) -> Result<GuessCefrWordLevelOutput,Error>;
+    async fn synonyms(&self, word: &str, pos: &str) -> Result<SynonymsOutput, Error>;
 }
 
 pub struct OpenAI {
@@ -203,6 +204,59 @@ impl Ai for OpenAI {
                     ChatCompletionRequestUserMessage{
                         content: Text(
                             format!("Guess CERF english level for word '{word}'(part of speech: {pos})")
+                        ),
+                        name: None,
+                    }
+                )
+
+            ])
+            .build().unwrap();
+
+        let content =
+            self.client.chat().create(request).await
+                .map_err(|_e| Error::AiError(_e.to_string()))?
+                .choices.first().map( |c| c.message.content.clone()).flatten()
+                .ok_or(Error::AiError("No content in result".to_string()))?;
+
+
+        serde_json::from_str(content.as_str()).map_err(|e| {
+            eprintln!("Error deserializing response: {}", e);
+            Error::GeneralError(e.to_string())
+        })
+
+    }
+
+
+    async fn synonyms(&self, word: &str, pos: &str) -> Result<SynonymsOutput, Error> {
+        let json_schema = ResponseFormatJsonSchema{
+            description: None,
+            name: "word_synonyms".to_string(),
+            strict: Some(true),
+            schema: Some(json!({
+                "type": "object",
+                "properties": {
+                    "synonyms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of synonyms for the given word"
+                    }
+                },
+                "required": ["synonyms"],
+                "additionalProperties": false
+            })),
+        };
+        let response_format = ResponseFormat::JsonSchema {json_schema};
+
+        let request = CreateChatCompletionRequestArgs::default()
+            .response_format(response_format)
+            .model("gpt-4.1")
+            .messages(vec![
+                User(
+                    ChatCompletionRequestUserMessage{
+                        content: Text(
+                            format!("List synonyms for word '{word}'(part of speech: {pos})")
                         ),
                         name: None,
                     }

@@ -40,6 +40,12 @@ pub(crate) struct GuessCefrWordLevelOutput {
     pub(crate) level: String,
 }
 
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub(crate) struct SynonymsOutput {
+    pub(crate) synonyms: Vec<String>,
+}
+
 /*
 #[derive(Debug)]
 pub enum CefrLevel {

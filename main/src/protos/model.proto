@@ -48,3 +48,12 @@ message GuessCefrlLevelRequest {
 message GuessCefrlLevelResponse {
   string level = 1;
 }
+
+message SynonymsRequest {
+  string word = 1;
+  string part_of_speech = 2;
+}
+
+message SynonymsResponse {
+  repeated string synonyms = 1;
+}
