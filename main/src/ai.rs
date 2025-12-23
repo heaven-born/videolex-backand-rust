@@ -118,7 +118,7 @@ impl Ai for OpenAI {
         let request = CreateImageRequestArgs::default()
             .prompt(prompt)
             .n(1)
-            .model(ImageModel::Other("gpt-image-1".to_string()))
+            .model(ImageModel::Other("gpt-image-1.5".to_string()))
             //.response_format(ImageResponseFormat::Url)
             .quality(ImageQuality::Medium)
             .size(ImageSize::S1024x1024)
